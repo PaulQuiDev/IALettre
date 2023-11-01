@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(28, 20px); /* Ajustez la taille selon vos besoins */
+      grid-gap: 1px; /* Espacement entre les cellules de la grille */
+    }
+
+    .cell {
+      width: 20px; /* Ajustez la taille selon vos besoins */
+      height: 20px; /* Ajustez la taille selon vos besoins */
+      background-color: white;
+      border: 1px solid #ccc;
+    }
+
+    .cell.active {
+      background-color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid" id="paint-grid">
+    <!-- Générez les cellules de la grille en utilisant JavaScript -->
+  </div>
+
+  <button id="refresh-button">Refresh</button>
+  <button id="send-button">Send (PNG)</button>
+  <p id="status">En attente...</p> <!-- Ajoutez la zone de texte pour le message en attente -->
+
+  <script>
+    let isMouseDown = false; // Variable pour suivre si le bouton de la souris est enfoncé
+
+    const grid = document.getElementById("paint-grid");
+    const refreshButton = document.getElementById("refresh-button");
+    const sendButton = document.getElementById("send-button");
+    const statusText = document.getElementById("status"); // Sélectionnez la zone de texte
+
+    // Fonction pour activer la cellule et les cellules voisines
+    function activateCellAndNeighbors(cell) {
+      cell.classList.add("active"); // Activez la classe "active" sur la cellule
+
+      // Récupérez les indices x et y de la cellule
+      const cellIndex = Array.from(cell.parentElement.children).indexOf(cell);
+      const rowIndex = Array.from(cell.parentElement.parentElement.children).indexOf(cell.parentElement);
+
+      // Sélectionnez les 4 cellules voisines (haut, bas, gauche, droite) et activez-les
+      const neighbors = [
+        grid.children[rowIndex - 1]?.children[cellIndex], // Cellule du haut
+        grid.children[rowIndex + 1]?.children[cellIndex], // Cellule du bas
+        cell.previousElementSibling, // Cellule de gauche
+        cell.nextElementSibling // Cellule de droite
+      ];
+
+      neighbors.forEach(neighbor => {
+        if (neighbor) {
+          neighbor.classList.add("active");
+        }
+      });
+    }
+
+    // Créez la grille 28x28
+    for (let i = 0; i < 28; i++) {
+      for (let j = 0; j < 28; j++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.addEventListener("mousedown", () => {
+          isMouseDown = true; // Lorsque le bouton de la souris est enfoncé, activez le suivi
+          activateCellAndNeighbors(cell);
+        });
+
+        cell.addEventListener("mouseup", () => {
+          isMouseDown = false; // Lorsque le bouton de la souris est relâché, désactivez le suivi
+        });
+
+        cell.addEventListener("mouseenter", () => {
+          if (isMouseDown) {
+            activateCellAndNeighbors(cell);
+          }
+        });
+
+        grid.appendChild(cell);
+      }
+    }
+
+    // Ajoutez un gestionnaire d'événements pour le bouton Refresh
+    refreshButton.addEventListener("click", () => {
+      // Réinitialisez la grille en supprimant la classe "active" de toutes les cellules
+      const cells = document.querySelectorAll(".cell");
+      cells.forEach(cell => cell.classList.remove("active"));
+    });
+
+    // Ajoutez un gestionnaire d'événements pour le bouton Send
+    sendButton.addEventListener("click", () => {
+      // Mise à jour du message en attente
+      statusText.textContent = "En cours de génération...";
+      
+      // Créez un canvas temporaire de 28x28
+      const canvas = document.createElement("canvas");
+      canvas.width = 28;
+      canvas.height = 28;
+      const ctx = canvas.getContext("2d");
+
+      // Copiez le contenu des cellules coloriées sur le canvas
+      const cells = document.querySelectorAll(".cell");
+      cells.forEach((cell, index) => {
+        if (cell.classList.contains("active")) {
+          const x = index % 28;
+          const y = Math.floor(index / 28);
+          ctx.fillStyle = "black";
+          ctx.fillRect(x, y, 1, 1);
+        }
+      });
+
+      // Convertissez le canvas en une URL de données (data URL)
+      const image = canvas.toDataURL("image/png");
+
+      // Mise à jour du message une fois l'image générée
+      statusText.textContent = "Bien télécharger";
+      
+      
+      
+      fetch('http://localhost:8000/file', {
+      method: "POST",
+      body: new FormData(document.forms[0]), // Envoyez le formulaire avec l'image
+      })
+      .then((response) => response.json())
+      .then((data) => {
+      // Mise à jour du message après la réponse de la requête
+      statusText.textContent = "Requête terminée avec succès!";
+      // Vous pouvez également traiter les données de la réponse ici si nécessaire
+      })
+      .catch((error) => {
+      // Gérez les erreurs en cas de problème avec la requête
+      statusText.textContent = "Erreur lors de la requête : " + error.message;
+      });
+
+      // Créez un lien de téléchargement
+      const a = document.createElement("a");
+      a.href = image;
+      a.download = "grid.png"; // Nom du fichier de téléchargement
+      a.click(); // Cliquez sur le lien pour démarrer le téléchargement
+
+    });
+  </script>
+</body>
+</html>

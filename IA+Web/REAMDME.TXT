@@ -1,0 +1,15 @@
+This document is a summary for GitHub. If the syntax is not good or messy, please feel free to change the order and sentences.
+
+It is a project that includes a CNN and an MLP to detect letters drawn on a 28 by 28 matrix, typically from a website.
+
+In this project, you will find "main.py," which is supposed to be the API responsible for executing the image.
+
+The HTML index is the website used for drawing and generating images in PNG format, which are used for output. It serves as the initial step in becoming the server code (main.py).
+
+"desespoir" is the code that generates "mon_model," which is the AI model.
+
+You also have "imageA.png," which are examples that can be used for output.
+
+The current issue is that JavaScript requests are not being sent correctly to the server (main.py), resulting in an error. As a result, the image cannot be processed.
+
+The model's accuracy is 86%, which is a very low value, likely due to the fact that EMLSIT uses a dataset of only 62 elements.
